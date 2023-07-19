@@ -11,28 +11,23 @@ namespace CityBuilder.TerrainGrid
         [SerializeField] private Material _material;
         [SerializeField] private int _resolution;
         [SerializeField] private int _sizeCell = 1;
+
+        private const string CellName = "Cell";
+        private const string PointName = "Point";
+        private const string GridContainer = "[GRID CONTAINER]";
         
-        void Start()
-        {
-            DrawGrid();
-        }
-
-        public void Clear()
-        {
-            
-        }
-
         public void DrawGrid()
         {
+            Clear();
+            
             TerrainData terrainData = _terrain.terrainData;
-            GameObject gridContainer = new GameObject("[GRID CONTAINER]");
+            GameObject gridContainer = new GameObject(GridContainer);
 
             for (int x = 0; x < terrainData.size.x; x += _sizeCell)
             {
                 for (int z = 0; z < terrainData.size.z; z += _sizeCell)
                 {
-                    float y = terrainData.GetHeight(x, z);
-                    Vector3 center = new Vector3(x, y, z);
+                    Vector3 center = new Vector3(x, 0, z);
 
                     CreateMesh(center, gridContainer.transform);
                 }
@@ -41,8 +36,9 @@ namespace CityBuilder.TerrainGrid
 
         public void CreateMesh(Vector3 startPoint, Transform container)
         {
-            GameObject gm = new GameObject("Cell");
+            GameObject gm = new GameObject(CellName);
             gm.transform.SetParent(container);
+            gm.transform.position = startPoint;
 
             //Create vertices
             List<Vector3> vertices = new List<Vector3>();
@@ -50,14 +46,15 @@ namespace CityBuilder.TerrainGrid
             float perStep = (float)_sizeCell / _resolution;
             
             int size = _resolution * _sizeCell;
-            int xStart = (int)startPoint.x * _resolution;
-            int zStart = (int)startPoint.z * _resolution;
             
-            for (int z = zStart; z < size + 1 + zStart; z += _sizeCell)
+            for (int z = 0; z < _resolution + 1; z ++)
             {
-                for (int x = xStart; x < size + 1 + xStart; x += _sizeCell)
+                for (int x = 0; x < _resolution + 1; x ++)
                 {
-                    float height = _terrain.terrainData.GetHeight(x, z) + 0.1f;
+                    float xValue = startPoint.x + x * perStep;
+                    float zValue = startPoint.z + z * perStep;
+                    float height = _terrain.SampleHeight(new Vector3(xValue, 0, zValue));
+                    height += 0.1f;
                     Vector3 vertics = new Vector3(x * perStep, height, z * perStep);
                     vertices.Add(vertics);
                 }
@@ -85,19 +82,19 @@ namespace CityBuilder.TerrainGrid
             
             //Create uv
             List<Vector2> uvs = new List<Vector2>();
-            for (int z = 0; z < size + 1; z += _sizeCell)
+            for (int z = 0; z < size + 1; z ++)
             {
-                for (int x = 0; x < size + 1; x += _sizeCell)
+                for (int x = 0; x < _resolution + 1; x++)
                 {
                     Vector2 uv = Vector2.zero;
-                    uv += new Vector2((float)x / size, (float)z / size);
+                    uv += new Vector2((float)x / _resolution, (float)z / _resolution);
                     uvs.Add(uv);
                 }
             }
 
             Mesh mesh = new Mesh
             {
-                name = "Cell",
+                name = CellName,
                 vertices = vertices.ToArray(),
                 triangles = triangles.ToArray(),
                 uv = uvs.ToArray()
@@ -110,6 +107,24 @@ namespace CityBuilder.TerrainGrid
 
             MeshFilter meshFilter = gm.AddComponent<MeshFilter>();
             meshFilter.mesh = mesh;
+        }
+        
+        public void Clear()
+        {
+            DestroyObject(GridContainer);
+            DestroyObject(CellName);
+            DestroyObject(PointName);
+        }
+        
+        private void DestroyObject(string objName)
+        {
+            GameObject obj = GameObject.Find(objName);
+
+            if (obj != null)
+            {
+                DestroyImmediate(obj);
+                DestroyObject(objName);
+            }
         }
     }
 }
