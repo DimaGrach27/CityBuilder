@@ -45,8 +45,6 @@ namespace CityBuilder.TerrainGrid
             
             float perStep = (float)_sizeCell / _resolution;
             
-            int size = _resolution * _sizeCell;
-            
             for (int z = 0; z < _resolution + 1; z ++)
             {
                 for (int x = 0; x < _resolution + 1; x ++)
@@ -55,7 +53,9 @@ namespace CityBuilder.TerrainGrid
                     float zValue = startPoint.z + z * perStep;
                     float height = _terrain.SampleHeight(new Vector3(xValue, 0, zValue));
                     height += 0.1f;
+                    
                     Vector3 vertics = new Vector3(x * perStep, height, z * perStep);
+                    
                     vertices.Add(vertics);
                 }
             }
@@ -82,7 +82,7 @@ namespace CityBuilder.TerrainGrid
             
             //Create uv
             List<Vector2> uvs = new List<Vector2>();
-            for (int z = 0; z < size + 1; z ++)
+            for (int z = 0; z < _resolution + 1; z ++)
             {
                 for (int x = 0; x < _resolution + 1; x++)
                 {
